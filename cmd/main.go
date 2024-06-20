@@ -6,7 +6,7 @@ import (
 	"os"
 	"post-api/internal/db"
 	"post-api/internal/graph"
-	"post-api/internal/postgres"
+	postgres2 "post-api/internal/repository/postgres"
 	"post-api/internal/resolver"
 
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -25,8 +25,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	comRepo := postgres.NewCommentsRepository(pool)
-	postRepo := postgres.NewPostRepository(pool)
+	comRepo := postgres2.NewCommentsRepository(pool)
+	postRepo := postgres2.NewPostRepository(pool)
 
 	res := resolver.NewResolver(postRepo, comRepo)
 

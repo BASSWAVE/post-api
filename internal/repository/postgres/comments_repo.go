@@ -15,7 +15,7 @@ func NewCommentsRepository(pool *pgxpool.Pool) *CommentsRepository {
 	return &CommentsRepository{pool: pool}
 }
 
-func (r *CommentsRepository) GetChildrenComments(parentId uint) ([]*model.Comment, error) {
+func (r *CommentsRepository) GetCommentsByParentID(parentId uint) ([]*model.Comment, error) {
 	rows, err := r.pool.Query(context.Background(), `SELECT * FROM comments WHERE parent_id = $1`, parentId)
 	if err != nil {
 		return nil, err
@@ -27,7 +27,7 @@ func (r *CommentsRepository) GetChildrenComments(parentId uint) ([]*model.Commen
 	return comments, nil
 }
 
-func (r *CommentsRepository) GetCommentsToPost(postID uint) ([]*model.Comment, error) {
+func (r *CommentsRepository) GetCommentsByPostID(postID uint) ([]*model.Comment, error) {
 	rows, err := r.pool.Query(context.Background(), `SELECT * FROM comments WHERE post_id = $1`, postID)
 	if err != nil {
 		return nil, err

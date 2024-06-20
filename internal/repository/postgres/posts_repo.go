@@ -6,10 +6,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"post-api/internal/model"
-)
-
-var (
-	ErrPostNotFound = errors.New("post not found")
+	"post-api/internal/repository"
 )
 
 type PostsRepository struct {
@@ -31,17 +28,7 @@ func (r *PostsRepository) CreatePost(post model.Post) (uint, error) {
 	return id, nil
 }
 
-func (r *PostsRepository) UpdateCommentsDisabled(postID uint, commentsDisabled bool) (bool, error) {
-	_, err := r.pool.Exec(context.Background(),
-		`UPDATE posts SET comments_disabled=$1 WHERE id = $2 RETURNING title, content`,
-		commentsDisabled, postID)
-	if err != nil {
-		return false, err
-	}
-	return true, nil
-}
-
-func (r *PostsRepository) ReadAllPosts() ([]*model.Post, error) {
+func (r *PostsRepository) GetAllPosts() ([]*model.Post, error) {
 	rows, err := r.pool.Query(context.Background(),
 		`SELECT id, title, content, comments_disabled FROM posts`)
 	if err != nil {
@@ -77,7 +64,7 @@ func (r *PostsRepository) GetPostByID(id uint) (*model.Post, error) {
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrPostNotFound
+			return nil, repository.ErrPostNotFound
 		}
 		return nil, err
 	}
@@ -85,12 +72,9 @@ func (r *PostsRepository) GetPostByID(id uint) (*model.Post, error) {
 	return &post, nil
 }
 
-func (r *PostsRepository) GetCommentsStatus(postId uint) (bool, error) {
-	var status bool
-	err := r.pool.QueryRow(context.Background(),
-		`SELECT comments_disabled FROM posts WHERE id=$1`, postId).Scan(&status)
-	if err != nil {
-		return false, err
-	}
-	return status, nil
+func (r *PostsRepository) UpdatePost(post model.Post) error {
+	_, err := r.pool.Exec(context.Background(),
+		`UPDATE posts SET title=$1, content=$2, comments_disabled=$3 WHERE id=$4`,
+		post.Title, post.Content, post.CommentsDisabled, post.ID)
+	return err
 }

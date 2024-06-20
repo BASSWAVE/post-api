@@ -6,7 +6,6 @@ package resolver
 
 import (
 	"context"
-	"errors"
 	"log"
 	"post-api/internal/graph"
 	"post-api/internal/model"
@@ -16,7 +15,7 @@ import (
 // Children is the resolver for the children field.
 func (r *commentResolver) Children(ctx context.Context, obj *model.Comment) ([]*model.Comment, error) {
 	log.Println("comment resolver: Children")
-	chilrenComments, err := r.commentsRepo.GetChildrenComments(obj.ParentID)
+	chilrenComments, err := r.serv.GetChildrenComments(obj.ParentID)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +30,7 @@ func (r *mutationResolver) CreatePost(ctx context.Context, title string, content
 		Content:          content,
 		CommentsDisabled: commentsDisabled,
 	}
-	id, err := r.postsRepo.CreatePost(post)
+	id, err := r.serv.CreatePost(post)
 	if err != nil {
 		return nil, err
 	}
@@ -42,19 +41,12 @@ func (r *mutationResolver) CreatePost(ctx context.Context, title string, content
 // CreateComment is the resolver for the createComment field.
 func (r *mutationResolver) CreateComment(ctx context.Context, postID uint, content string, parentID uint) (*model.Comment, error) {
 	log.Println("mutation resolver: create comment")
-	commentsAreDisabled, err := r.postsRepo.GetCommentsStatus(postID)
-	if err != nil {
-		return nil, err
-	}
-	if commentsAreDisabled {
-		return nil, errors.New("user has forbidden leaving comments ")
-	}
 	comment := model.Comment{
 		PostID:   postID,
 		Content:  content,
 		ParentID: parentID,
 	}
-	id, err := r.commentsRepo.CreateComment(comment)
+	id, err := r.serv.CreateComment(comment)
 	if err != nil {
 		return nil, err
 	}
@@ -65,17 +57,17 @@ func (r *mutationResolver) CreateComment(ctx context.Context, postID uint, conte
 // MakeCommentsDisabled is the resolver for the makeCommentsDisabled field.
 func (r *mutationResolver) MakeCommentsDisabled(ctx context.Context, postID uint, commentsDisabled bool) (bool, error) {
 	log.Println("mutation resolver: makecommentsdis")
-	ok, err := r.postsRepo.UpdateCommentsDisabled(postID, commentsDisabled)
+	err := r.serv.SetCommentsStatus(postID, commentsDisabled)
 	if err != nil {
 		return false, err
 	}
-	return ok, nil
+	return true, nil
 }
 
 // Comments is the resolver for the comments field.
 func (r *postResolver) Comments(ctx context.Context, obj *model.Post) ([]*model.Comment, error) {
 	log.Println("post resolver: comments")
-	comments, err := r.commentsRepo.GetCommentsToPost(obj.ID)
+	comments, err := r.serv.GetPostComments(obj.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +77,7 @@ func (r *postResolver) Comments(ctx context.Context, obj *model.Post) ([]*model.
 // Posts is the resolver for the posts field.
 func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
 	log.Println("query resolver: posts")
-	posts, err := r.postsRepo.ReadAllPosts()
+	posts, err := r.serv.GetAllPosts()
 	if err != nil {
 		return nil, err
 	}
@@ -95,39 +87,34 @@ func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
 // Post is the resolver for the post field.
 func (r *queryResolver) Post(ctx context.Context, id uint) (*model.Post, error) {
 	log.Println("query resolver: post")
-	post, err := r.postsRepo.GetPostByID(id)
+	post, err := r.serv.GetPost(id)
 	if err != nil {
 		return nil, err
 	}
 	return post, nil
 }
 
-// Comments is the resolver for the comments field.
-func (r *queryResolver) Comments(ctx context.Context, postID uint, limit int) ([]*model.Comment, error) {
-	log.Println("query resolver: comments")
-	_, err := r.postsRepo.GetPostByID(postID)
-	if err != nil {
-		return nil, err
-	}
-	comments, err := r.commentsRepo.GetCommentsToPost(postID)
-	if err != nil {
-		return nil, err
-	}
-	return comments, nil
-}
-
 // CommentAdded is the resolver for the commentAdded field.
 func (r *subscriptionResolver) CommentAdded(ctx context.Context, postID uint) (<-chan *model.Comment, error) {
 	log.Println("sub resolver: commentadded")
-	commentsChannel := make(chan *model.Comment, 1)
+	ch := make(chan *model.Comment)
+
 	go func() {
+		defer close(ch)
+
 		for {
-			time.Sleep(5 * time.Second)
-			post := &Post{ID: "1", Title: "New Post"}
-			commentsChannel <- comment
+			time.Sleep(1 * time.Second)
+			select {
+			case <-ctx.Done():
+				return
+			case ch <- t:
+				// Our message went through, do nothing
+			}
+
 		}
 	}()
-	return commentsChannel, nil
+	return ch, nil
+
 }
 
 // Comment returns graph.CommentResolver implementation.
@@ -149,6 +136,4 @@ type commentResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type postResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-type subscriptionResolver struct {
-	*Resolver
-}
+type subscriptionResolver struct{ *Resolver }
