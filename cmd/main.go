@@ -1,13 +1,15 @@
 package main
 
 import (
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"log"
 	"net/http"
 	"os"
 	"post-api/internal/db"
 	"post-api/internal/graph"
-	postgres2 "post-api/internal/repository/postgres"
+	"post-api/internal/repository/postgres"
 	"post-api/internal/resolver"
+	"post-api/internal/service"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -25,12 +27,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	comRepo := postgres2.NewCommentsRepository(pool)
-	postRepo := postgres2.NewPostRepository(pool)
+	comRepo := postgres.NewCommentsRepository(pool)
+	postRepo := postgres.NewPostRepository(pool)
+	serv := service.NewService(postRepo, comRepo)
 
-	res := resolver.NewResolver(postRepo, comRepo)
+	res := resolver.NewResolver(serv)
 
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: res}))
+	srv.AddTransport(&transport.Websocket{})
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)

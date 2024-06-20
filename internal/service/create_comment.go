@@ -18,5 +18,14 @@ func (s *Service) CreateComment(comment model.Comment) (uint, error) {
 	if err != nil {
 		return 0, err
 	}
+
+	go func() {
+		for _, ch := range model.Subs[post.ID] {
+			go func() {
+				ch <- &comment
+			}()
+		}
+	}()
+
 	return id, nil
 }

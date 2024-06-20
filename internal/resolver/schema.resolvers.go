@@ -9,7 +9,6 @@ import (
 	"log"
 	"post-api/internal/graph"
 	"post-api/internal/model"
-	"time"
 )
 
 // Children is the resolver for the children field.
@@ -98,23 +97,13 @@ func (r *queryResolver) Post(ctx context.Context, id uint) (*model.Post, error) 
 func (r *subscriptionResolver) CommentAdded(ctx context.Context, postID uint) (<-chan *model.Comment, error) {
 	log.Println("sub resolver: commentadded")
 	ch := make(chan *model.Comment)
+	model.Subs[postID] = append(model.Subs[postID], ch)
 
 	go func() {
-		defer close(ch)
-
-		for {
-			time.Sleep(1 * time.Second)
-			select {
-			case <-ctx.Done():
-				return
-			case ch <- t:
-				// Our message went through, do nothing
-			}
-
-		}
+		<-ctx.Done()
+		close(ch)
 	}()
 	return ch, nil
-
 }
 
 // Comment returns graph.CommentResolver implementation.
