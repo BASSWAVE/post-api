@@ -5,7 +5,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-const postgresUrl = "postgres://user:pass@localhost:5432/postgres?sslmode=disable"
+const postgresUrl = "postgres://user:pass@db:5432/postgres?sslmode=disable"
 
 func NewPool() (*pgxpool.Pool, error) {
 	pool, err := pgxpool.New(context.Background(), postgresUrl)

@@ -13,10 +13,8 @@ migration-up:
 migration-down:
 	goose -dir "$(MIGRATION_FOLDER)" postgres "$(POSTGRES_SETUP_TEST)" down
 
-postgres:
-	sudo docker run \
-	--name postgres-posts \
-	-e POSTGRES_PASSWORD=pass \
-	-e POSTGRES_USER=user \
-	-p 5432:5432 \
-	-d postgres
+docker-up:
+	 docker compose up -d
+
+docker-down:
+	docker compose down
