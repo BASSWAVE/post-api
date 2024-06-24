@@ -19,6 +19,9 @@ resolver:
   package: resolver
   filename_template: "{name}.resolvers.go"
 
+# Optional: turn on to use []Thing instead of []*Thing
+omit_slice_element_pointers: true
+
 # gqlgen will search for any type names in the schema in these go packages
 # if they match it will use them, otherwise it will generate them.
 autobind:
@@ -35,10 +38,8 @@ models:
   Int:
     model: github.com/99designs/gqlgen/graphql.Int
   Post:
-    fields:
-      comments:
-        resolver: true # force a resolver to be generated
+    model:
+      post-api/internal/model.Post
   Comment:
-    fields:
-      children:
-        resolver: true
+    model:
+      post-api/internal/model.Comment

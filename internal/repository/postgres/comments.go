@@ -15,43 +15,29 @@ func NewCommentsRepository(pool *pgxpool.Pool) *CommentsRepository {
 	return &CommentsRepository{pool: pool}
 }
 
-func (r *CommentsRepository) GetCommentsByParentID(parentId uint) ([]*model.Comment, error) {
+func (r *CommentsRepository) GetCommentsByParentID(parentId uint) ([]model.Comment, error) {
 	rows, err := r.pool.Query(context.Background(), `SELECT * FROM comments WHERE parent_id = $1`, parentId)
 	if err != nil {
 		return nil, err
 	}
-	comments, err := pgx.CollectRows(rows, pgx.RowToStructByName[*model.Comment])
+	comments, err := pgx.CollectRows(rows, pgx.RowToStructByName[model.Comment])
 	if err != nil {
 		return nil, err
 	}
 	return comments, nil
 }
 
-func (r *CommentsRepository) GetCommentsByPostID(postID uint) ([]*model.Comment, error) {
-	rows, err := r.pool.Query(context.Background(), `SELECT * FROM comments WHERE post_id = $1`, postID)
+func (r *CommentsRepository) GetCommentsByPostID(postID uint) ([]model.Comment, error) {
+	rows, err := r.pool.Query(context.Background(),
+		`SELECT * FROM comments WHERE post_id = $1 AND parent_id IS NULL`, postID)
 	if err != nil {
 		return nil, err
 	}
-	comments, err := pgx.CollectRows(rows, pgx.RowToStructByName[struct {
-		ID       uint
-		PostID   uint
-		Content  string
-		ParentID uint
-	}])
+	comments, err := pgx.CollectRows(rows, pgx.RowToStructByName[model.Comment])
 	if err != nil {
 		return nil, err
 	}
-	commentsPointers := make([]*model.Comment, len(comments))
-	for i := range comments {
-		commentsPointers[i] = &model.Comment{
-			ID:       comments[i].ID,
-			PostID:   comments[i].PostID,
-			Content:  comments[i].Content,
-			ParentID: comments[i].ParentID,
-		}
-	}
-
-	return commentsPointers, nil
+	return comments, nil
 }
 
 func (r *CommentsRepository) CreateComment(comment model.Comment) (uint, error) {

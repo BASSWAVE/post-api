@@ -2,23 +2,7 @@
 
 package model
 
-type Comment struct {
-	ID       uint       `json:"id"`
-	PostID   uint       `json:"postId"`
-	Content  string     `json:"content"`
-	ParentID uint       `json:"parentId"`
-	Children []*Comment `json:"children"`
-}
-
 type Mutation struct {
-}
-
-type Post struct {
-	ID               uint       `json:"id"`
-	Title            string     `json:"title"`
-	Content          string     `json:"content"`
-	Comments         []*Comment `json:"comments"`
-	CommentsDisabled bool       `json:"commentsDisabled"`
 }
 
 type Query struct {
@@ -26,4 +10,3 @@ type Query struct {
 
 type Subscription struct {
 }
-

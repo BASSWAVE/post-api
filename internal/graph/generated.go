@@ -59,7 +59,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateComment        func(childComplexity int, postID uint, content string, parentID uint) int
+		CreateComment        func(childComplexity int, postID uint, content string, parentID *uint) int
 		CreatePost           func(childComplexity int, title string, content string, commentsDisabled bool) int
 		MakeCommentsDisabled func(childComplexity int, postID uint, commentsDisabled bool) int
 	}
@@ -83,18 +83,18 @@ type ComplexityRoot struct {
 }
 
 type CommentResolver interface {
-	Children(ctx context.Context, obj *model.Comment) ([]*model.Comment, error)
+	Children(ctx context.Context, obj *model.Comment) ([]model.Comment, error)
 }
 type MutationResolver interface {
 	CreatePost(ctx context.Context, title string, content string, commentsDisabled bool) (*model.Post, error)
-	CreateComment(ctx context.Context, postID uint, content string, parentID uint) (*model.Comment, error)
+	CreateComment(ctx context.Context, postID uint, content string, parentID *uint) (*model.Comment, error)
 	MakeCommentsDisabled(ctx context.Context, postID uint, commentsDisabled bool) (bool, error)
 }
 type PostResolver interface {
-	Comments(ctx context.Context, obj *model.Post) ([]*model.Comment, error)
+	Comments(ctx context.Context, obj *model.Post) ([]model.Comment, error)
 }
 type QueryResolver interface {
-	Posts(ctx context.Context) ([]*model.Post, error)
+	Posts(ctx context.Context) ([]model.Post, error)
 	Post(ctx context.Context, id uint) (*model.Post, error)
 }
 type SubscriptionResolver interface {
@@ -165,7 +165,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateComment(childComplexity, args["postId"].(uint), args["content"].(string), args["parentId"].(uint)), true
+		return e.complexity.Mutation.CreateComment(childComplexity, args["postId"].(uint), args["content"].(string), args["parentId"].(*uint)), true
 
 	case "Mutation.createPost":
 		if e.complexity.Mutation.CreatePost == nil {
@@ -390,7 +390,7 @@ type Comment {
   id: ID!
   postId: ID!
   content: String!
-  parentId: ID!
+  parentId: ID
   children: [Comment!]!
 }
 
@@ -401,7 +401,7 @@ type Query {
 
 type Mutation {
   createPost(title: String!, content: String!, commentsDisabled: Boolean!): Post!
-  createComment(postId: ID!, content: String!, parentId: ID!): Comment!
+  createComment(postId: ID!, content: String!, parentId: ID): Comment!
   makeCommentsDisabled(postId: ID!, commentsDisabled: Boolean!): Boolean!
 }
 
@@ -436,10 +436,10 @@ func (ec *executionContext) field_Mutation_createComment_args(ctx context.Contex
 		}
 	}
 	args["content"] = arg1
-	var arg2 uint
+	var arg2 *uint
 	if tmp, ok := rawArgs["parentId"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parentId"))
-		arg2, err = ec.unmarshalNID2uint(ctx, tmp)
+		arg2, err = ec.unmarshalOID2ᚖuint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -741,14 +741,11 @@ func (ec *executionContext) _Comment_parentId(ctx context.Context, field graphql
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(uint)
 	fc.Result = res
-	return ec.marshalNID2uint(ctx, field.Selections, res)
+	return ec.marshalOID2uint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Comment_parentId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -790,9 +787,9 @@ func (ec *executionContext) _Comment_children(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Comment)
+	res := resTmp.([]model.Comment)
 	fc.Result = res
-	return ec.marshalNComment2ᚕᚖpostᚑapiᚋinternalᚋmodelᚐCommentᚄ(ctx, field.Selections, res)
+	return ec.marshalNComment2ᚕpostᚑapiᚋinternalᚋmodelᚐCommentᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Comment_children(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -901,7 +898,7 @@ func (ec *executionContext) _Mutation_createComment(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateComment(rctx, fc.Args["postId"].(uint), fc.Args["content"].(string), fc.Args["parentId"].(uint))
+		return ec.resolvers.Mutation().CreateComment(rctx, fc.Args["postId"].(uint), fc.Args["content"].(string), fc.Args["parentId"].(*uint))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1167,9 +1164,9 @@ func (ec *executionContext) _Post_comments(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Comment)
+	res := resTmp.([]model.Comment)
 	fc.Result = res
-	return ec.marshalNComment2ᚕᚖpostᚑapiᚋinternalᚋmodelᚐCommentᚄ(ctx, field.Selections, res)
+	return ec.marshalNComment2ᚕpostᚑapiᚋinternalᚋmodelᚐCommentᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Post_comments(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1267,9 +1264,9 @@ func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Post)
+	res := resTmp.([]model.Post)
 	fc.Result = res
-	return ec.marshalNPost2ᚕᚖpostᚑapiᚋinternalᚋmodelᚐPostᚄ(ctx, field.Selections, res)
+	return ec.marshalNPost2ᚕpostᚑapiᚋinternalᚋmodelᚐPostᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_posts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3380,9 +3377,6 @@ func (ec *executionContext) _Comment(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "parentId":
 			out.Values[i] = ec._Comment_parentId(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
 		case "children":
 			field := field
 
@@ -4051,7 +4045,7 @@ func (ec *executionContext) marshalNComment2postᚑapiᚋinternalᚋmodelᚐComm
 	return ec._Comment(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNComment2ᚕᚖpostᚑapiᚋinternalᚋmodelᚐCommentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Comment) graphql.Marshaler {
+func (ec *executionContext) marshalNComment2ᚕpostᚑapiᚋinternalᚋmodelᚐCommentᚄ(ctx context.Context, sel ast.SelectionSet, v []model.Comment) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -4075,7 +4069,7 @@ func (ec *executionContext) marshalNComment2ᚕᚖpostᚑapiᚋinternalᚋmodel�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNComment2ᚖpostᚑapiᚋinternalᚋmodelᚐComment(ctx, sel, v[i])
+			ret[i] = ec.marshalNComment2postᚑapiᚋinternalᚋmodelᚐComment(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -4124,7 +4118,7 @@ func (ec *executionContext) marshalNPost2postᚑapiᚋinternalᚋmodelᚐPost(ct
 	return ec._Post(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNPost2ᚕᚖpostᚑapiᚋinternalᚋmodelᚐPostᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Post) graphql.Marshaler {
+func (ec *executionContext) marshalNPost2ᚕpostᚑapiᚋinternalᚋmodelᚐPostᚄ(ctx context.Context, sel ast.SelectionSet, v []model.Post) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -4148,7 +4142,7 @@ func (ec *executionContext) marshalNPost2ᚕᚖpostᚑapiᚋinternalᚋmodelᚐP
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPost2ᚖpostᚑapiᚋinternalᚋmodelᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalNPost2postᚑapiᚋinternalᚋmodelᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -4469,6 +4463,32 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	res := graphql.MarshalBoolean(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOID2uint(ctx context.Context, v interface{}) (uint, error) {
+	res, err := graphql.UnmarshalUintID(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOID2uint(ctx context.Context, sel ast.SelectionSet, v uint) graphql.Marshaler {
+	res := graphql.MarshalUintID(v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOID2ᚖuint(ctx context.Context, v interface{}) (*uint, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalUintID(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOID2ᚖuint(ctx context.Context, sel ast.SelectionSet, v *uint) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalUintID(*v)
 	return res
 }
 

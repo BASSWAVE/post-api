@@ -1,14 +1,10 @@
 package service
 
+import "post-api/internal/model"
+
 func (s *Service) SetCommentsStatus(postID uint, status bool) error {
-	post, err := s.postsRepo.GetPostByID(postID)
-	if err != nil {
-		return err
-	}
-	if post.CommentsDisabled == status {
-		return nil
-	}
-	post.CommentsDisabled = status
-	err = s.postsRepo.UpdatePost(*post)
+	t := new(bool)
+	*t = status
+	err := s.postsRepo.UpdatePost(postID, model.UpdatePostInput{CommentsDisabled: t})
 	return err
 }

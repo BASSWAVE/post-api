@@ -12,9 +12,9 @@ import (
 )
 
 // Children is the resolver for the children field.
-func (r *commentResolver) Children(ctx context.Context, obj *model.Comment) ([]*model.Comment, error) {
+func (r *commentResolver) Children(ctx context.Context, obj *model.Comment) ([]model.Comment, error) {
 	log.Println("comment resolver: Children")
-	chilrenComments, err := r.serv.GetChildrenComments(obj.ParentID)
+	chilrenComments, err := r.serv.GetChildrenComments(obj.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func (r *mutationResolver) CreatePost(ctx context.Context, title string, content
 }
 
 // CreateComment is the resolver for the createComment field.
-func (r *mutationResolver) CreateComment(ctx context.Context, postID uint, content string, parentID uint) (*model.Comment, error) {
+func (r *mutationResolver) CreateComment(ctx context.Context, postID uint, content string, parentID *uint) (*model.Comment, error) {
 	log.Println("mutation resolver: create comment")
 	comment := model.Comment{
 		PostID:   postID,
@@ -64,7 +64,7 @@ func (r *mutationResolver) MakeCommentsDisabled(ctx context.Context, postID uint
 }
 
 // Comments is the resolver for the comments field.
-func (r *postResolver) Comments(ctx context.Context, obj *model.Post) ([]*model.Comment, error) {
+func (r *postResolver) Comments(ctx context.Context, obj *model.Post) ([]model.Comment, error) {
 	log.Println("post resolver: comments")
 	comments, err := r.serv.GetPostComments(obj.ID)
 	if err != nil {
@@ -74,7 +74,7 @@ func (r *postResolver) Comments(ctx context.Context, obj *model.Post) ([]*model.
 }
 
 // Posts is the resolver for the posts field.
-func (r *queryResolver) Posts(ctx context.Context) ([]*model.Post, error) {
+func (r *queryResolver) Posts(ctx context.Context) ([]model.Post, error) {
 	log.Println("query resolver: posts")
 	posts, err := r.serv.GetAllPosts()
 	if err != nil {

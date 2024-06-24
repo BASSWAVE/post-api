@@ -10,7 +10,7 @@ type Comment {
   id: ID!
   postId: ID!
   content: String!
-  parentId: ID!
+  parentId: ID
   children: [Comment!]!
 }
 
@@ -21,7 +21,7 @@ type Query {
 
 type Mutation {
   createPost(title: String!, content: String!, commentsDisabled: Boolean!): Post!
-  createComment(postId: ID!, content: String!, parentId: ID!): Comment!
+  createComment(postId: ID!, content: String!, parentId: ID): Comment!
   makeCommentsDisabled(postId: ID!, commentsDisabled: Boolean!): Boolean!
 }
 
