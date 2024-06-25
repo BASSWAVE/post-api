@@ -19,7 +19,7 @@ func NewPostRepository(pool *pgxpool.Pool) *PostsRepository {
 	return &PostsRepository{pool: pool}
 }
 
-func (r *PostsRepository) CreatePost(post model.Post) (uint, error) {
+func (r *PostsRepository) CreatePost(post model.PostForCreating) (uint, error) {
 	var id uint
 	err := r.pool.QueryRow(context.Background(),
 		`INSERT INTO posts(title, content, comments_disabled) VALUES ($1, $2, $3) RETURNING id`,
@@ -58,24 +58,24 @@ func (r *PostsRepository) GetPostByID(id uint) (*model.Post, error) {
 	return &post, nil
 }
 
-func (r *PostsRepository) UpdatePost(postID uint, post model.UpdatePostInput) error {
+func (r *PostsRepository) UpdatePost(postID uint, input model.PostForUpdating) error {
 	fields := make([]string, 0)
 	args := make([]any, 0)
 	argID := 1
 
-	if post.Title != nil {
+	if input.Title != nil {
 		fields = append(fields, fmt.Sprintf("title=$%d", argID))
-		args = append(args, *post.Title)
+		args = append(args, *input.Title)
 		argID++
 	}
-	if post.Content != nil {
+	if input.Content != nil {
 		fields = append(fields, fmt.Sprintf("content=$%d", argID))
-		args = append(args, *post.Content)
+		args = append(args, *input.Content)
 		argID++
 	}
-	if post.CommentsDisabled != nil {
+	if input.CommentsDisabled != nil {
 		fields = append(fields, fmt.Sprintf("comments_disabled=$%d", argID))
-		args = append(args, *post.CommentsDisabled)
+		args = append(args, *input.CommentsDisabled)
 		argID++
 	}
 

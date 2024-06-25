@@ -24,7 +24,7 @@ func (m *MockPostsRepo) GetPostByID(id uint) (*model.Post, error) {
 	return args.Get(0).(*model.Post), args.Error(1)
 }
 
-func (m *MockPostsRepo) UpdatePost(postID uint, post model.UpdatePostInput) error {
+func (m *MockPostsRepo) UpdatePost(postID uint, post model.PostForUpdating) error {
 	args := m.Called(post)
 	return args.Error(0)
 }

@@ -24,7 +24,7 @@ func (r *commentResolver) Children(ctx context.Context, obj *model.Comment) ([]m
 // CreatePost is the resolver for the createPost field.
 func (r *mutationResolver) CreatePost(ctx context.Context, title string, content string, commentsDisabled bool) (*model.Post, error) {
 	log.Println("mutation resolver: createpost")
-	post := model.Post{
+	post := model.PostForCreating{
 		Title:            title,
 		Content:          content,
 		CommentsDisabled: commentsDisabled,
@@ -33,14 +33,19 @@ func (r *mutationResolver) CreatePost(ctx context.Context, title string, content
 	if err != nil {
 		return nil, err
 	}
-	post.ID = id
-	return &post, nil
+	postToReturn := model.Post{
+		ID:               id,
+		Title:            title,
+		Content:          content,
+		CommentsDisabled: commentsDisabled,
+	}
+	return &postToReturn, nil
 }
 
 // CreateComment is the resolver for the createComment field.
 func (r *mutationResolver) CreateComment(ctx context.Context, postID uint, content string, parentID *uint) (*model.Comment, error) {
 	log.Println("mutation resolver: create comment")
-	comment := model.Comment{
+	comment := model.CommentForCreating{
 		PostID:   postID,
 		Content:  content,
 		ParentID: parentID,
@@ -49,8 +54,13 @@ func (r *mutationResolver) CreateComment(ctx context.Context, postID uint, conte
 	if err != nil {
 		return nil, err
 	}
-	comment.ID = id
-	return &comment, nil
+	commentToReturn := model.Comment{
+		ID:       id,
+		PostID:   postID,
+		Content:  content,
+		ParentID: parentID,
+	}
+	return &commentToReturn, nil
 }
 
 // MakeCommentsDisabled is the resolver for the makeCommentsDisabled field.

@@ -6,44 +6,61 @@ import (
 )
 
 type PostsRepository struct {
-	storage map[uint]model.PostFromServiceToRepo
+	storage map[uint]model.Post
 	lastID  uint
 	mx      sync.Mutex
 }
 
-func NewPostRepository(storage map[uint]*model.Post) *PostsRepository {
-	return &PostsRepository{storage: storage}
+func NewPostRepository() *PostsRepository {
+	return &PostsRepository{storage: make(map[uint]model.Post)}
 }
 
-func (r *PostsRepository) CreatePost(post model.Post) (uint, error) {
+func (r *PostsRepository) CreatePost(post model.PostForCreating) (uint, error) {
+	r.mx.Lock()
+	defer r.mx.Unlock()
+
 	r.lastID++
-	post.ID = r.lastID
-	r.mx.Lock()
-	r.storage[post.ID] = &post
-	r.mx.Unlock()
-	return post.ID, nil
+	postWithID := model.Post{
+		ID:               r.lastID,
+		Title:            post.Title,
+		Content:          post.Content,
+		CommentsDisabled: post.CommentsDisabled,
+	}
+	r.storage[postWithID.ID] = postWithID
+	return postWithID.ID, nil
 }
 
-func (r *PostsRepository) GetAllPosts() ([]*model.Post, error) {
-	posts := make([]*model.Post, 0)
+func (r *PostsRepository) GetAllPosts() ([]model.Post, error) {
 	r.mx.Lock()
+	defer r.mx.Unlock()
+
+	posts := make([]model.Post, 0)
 	for _, val := range r.storage {
 		posts = append(posts, val)
 	}
-	r.mx.Unlock()
 	return posts, nil
 }
 
 func (r *PostsRepository) GetPostByID(id uint) (*model.Post, error) {
 	r.mx.Lock()
+	defer r.mx.Unlock()
 	post := r.storage[id]
-	r.mx.Unlock()
-	return post, nil
+	return &post, nil
 }
 
-func (r *PostsRepository) UpdatePost(post model.Post) error {
+func (r *PostsRepository) UpdatePost(id uint, input model.PostForUpdating) error {
 	r.mx.Lock()
-	r.storage[post.ID] = &post
-	r.mx.Unlock()
+	defer r.mx.Unlock()
+	updatedPost := r.storage[id]
+	if input.Title != nil {
+		updatedPost.Title = *input.Title
+	}
+	if input.Content != nil {
+		updatedPost.Content = *input.Content
+	}
+	if input.CommentsDisabled != nil {
+		updatedPost.CommentsDisabled = *input.CommentsDisabled
+	}
+	r.storage[id] = updatedPost
 	return nil
 }

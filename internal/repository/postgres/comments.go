@@ -40,7 +40,7 @@ func (r *CommentsRepository) GetCommentsByPostID(postID uint) ([]model.Comment, 
 	return comments, nil
 }
 
-func (r *CommentsRepository) CreateComment(comment model.Comment) (uint, error) {
+func (r *CommentsRepository) CreateComment(comment model.CommentForCreating) (uint, error) {
 	var id uint
 	err := r.pool.QueryRow(context.Background(),
 		`INSERT INTO comments(post_id, content, parent_id) VALUES ($1, $2, $3) RETURNING id`,

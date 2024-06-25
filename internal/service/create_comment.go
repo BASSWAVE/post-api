@@ -5,7 +5,7 @@ import (
 	"post-api/internal/model"
 )
 
-func (s *Service) CreateComment(comment model.Comment) (uint, error) {
+func (s *Service) CreateComment(comment model.CommentForCreating) (uint, error) {
 	post, err := s.postsRepo.GetPostByID(comment.PostID)
 	if err != nil {
 		return 0, err
@@ -18,11 +18,16 @@ func (s *Service) CreateComment(comment model.Comment) (uint, error) {
 	if err != nil {
 		return 0, err
 	}
-
+	commentToChannel := model.Comment{
+		ID:       id,
+		PostID:   comment.PostID,
+		Content:  comment.Content,
+		ParentID: comment.ParentID,
+	}
 	go func() {
 		for _, ch := range model.Subs[post.ID] {
 			go func() {
-				ch <- &comment
+				ch <- &commentToChannel
 			}()
 		}
 	}()
