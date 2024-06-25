@@ -11,14 +11,14 @@ import (
 	"post-api/internal/model"
 )
 
-// Children is the resolver for the children field.
-func (r *commentResolver) Children(ctx context.Context, obj *model.Comment) ([]model.Comment, error) {
-	log.Println("comment resolver: Children")
-	chilrenComments, err := r.serv.GetChildrenComments(obj.ID)
+// Replies is the resolver for the replies field.
+func (r *commentResolver) Replies(ctx context.Context, obj *model.Comment) ([]model.Comment, error) {
+	log.Println("comment resolver: Replies")
+	replies, err := r.serv.GetReplies(obj.ID)
 	if err != nil {
 		return nil, err
 	}
-	return chilrenComments, nil
+	return replies, nil
 }
 
 // CreatePost is the resolver for the createPost field.
@@ -33,33 +33,30 @@ func (r *mutationResolver) CreatePost(ctx context.Context, title string, content
 	if err != nil {
 		return nil, err
 	}
-	postToReturn := model.Post{
-		ID:               id,
-		Title:            title,
-		Content:          content,
-		CommentsDisabled: commentsDisabled,
-	}
+	postToReturn := model.BuildPost(id, post)
 	return &postToReturn, nil
 }
 
 // CreateComment is the resolver for the createComment field.
 func (r *mutationResolver) CreateComment(ctx context.Context, postID uint, content string, parentID *uint) (*model.Comment, error) {
 	log.Println("mutation resolver: create comment")
+	var parentIDValue uint
+	if parentID == nil {
+		parentIDValue = 0
+	} else {
+		parentIDValue = *parentID
+	}
 	comment := model.CommentForCreating{
-		PostID:   postID,
-		Content:  content,
-		ParentID: parentID,
+		PostID:    postID,
+		Content:   content,
+		ParentID:  parentIDValue,
+		HasParent: parentID != nil,
 	}
 	id, err := r.serv.CreateComment(comment)
 	if err != nil {
 		return nil, err
 	}
-	commentToReturn := model.Comment{
-		ID:       id,
-		PostID:   postID,
-		Content:  content,
-		ParentID: parentID,
-	}
+	commentToReturn := model.BuildComment(id, comment)
 	return &commentToReturn, nil
 }
 

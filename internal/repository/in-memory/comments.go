@@ -38,16 +38,11 @@ func (r *CommentsRepository) CreateComment(comment model.CommentForCreating) (ui
 	defer r.mx.Unlock()
 
 	r.lastID++
-	commentWithID := model.Comment{
-		ID:       r.lastID,
-		Content:  comment.Content,
-		PostID:   comment.PostID,
-		ParentID: comment.ParentID,
-	}
-	if commentWithID.ParentID != nil {
-		r.storageByParentID[*commentWithID.ParentID] = append(r.storageByParentID[*commentWithID.ParentID], commentWithID)
+	commentToAdd := model.BuildComment(r.lastID, comment)
+	if commentToAdd.HasParent {
+		r.storageByParentID[commentToAdd.ParentID] = append(r.storageByParentID[commentToAdd.ParentID], commentToAdd)
 	} else {
-		r.storageByPostID[commentWithID.PostID] = append(r.storageByPostID[commentWithID.PostID], commentWithID)
+		r.storageByPostID[commentToAdd.PostID] = append(r.storageByPostID[commentToAdd.PostID], commentToAdd)
 	}
-	return commentWithID.ID, nil
+	return commentToAdd.ID, nil
 }

@@ -1,6 +1,7 @@
 package in_memory
 
 import (
+	"fmt"
 	"post-api/internal/model"
 	"sync"
 	"testing"
@@ -171,6 +172,7 @@ func TestCreateComment(t *testing.T) {
 		initialStoragePost    map[uint][]model.Comment
 		initialStorageParent  map[uint][]model.Comment
 		commentToCreate       model.CommentForCreating
+		lastID                uint
 		expectedID            uint
 		expectedStoragePost   map[uint][]model.Comment
 		expectedStorageParent map[uint][]model.Comment
@@ -183,6 +185,7 @@ func TestCreateComment(t *testing.T) {
 				PostID:  1,
 				Content: "First comment",
 			},
+			lastID:     0,
 			expectedID: 1,
 			expectedStoragePost: map[uint][]model.Comment{
 				1: {{ID: 1, PostID: 1, Content: "First comment"}},
@@ -194,14 +197,15 @@ func TestCreateComment(t *testing.T) {
 			initialStoragePost:   map[uint][]model.Comment{},
 			initialStorageParent: map[uint][]model.Comment{},
 			commentToCreate: model.CommentForCreating{
-				PostID:   1,
-				Content:  "Reply to first comment",
-				ParentID: func(u uint) *uint { return &u }(1),
+				PostID:    1,
+				Content:   "Reply to first comment",
+				ParentID:  1,
+				HasParent: true,
 			},
 			expectedID:          1,
 			expectedStoragePost: map[uint][]model.Comment{},
 			expectedStorageParent: map[uint][]model.Comment{
-				1: {{ID: 1, PostID: 1, Content: "Reply to first comment", ParentID: func(u uint) *uint { return &u }(1)}},
+				1: {{ID: 1, PostID: 1, Content: "Reply to first comment", ParentID: 1, HasParent: true}},
 			},
 		},
 		{
@@ -225,9 +229,10 @@ func TestCreateComment(t *testing.T) {
 			},
 			initialStorageParent: map[uint][]model.Comment{},
 			commentToCreate: model.CommentForCreating{
-				PostID:   1,
-				Content:  "Second comment",
-				ParentID: func(u uint) *uint { return &u }(1),
+				PostID:    1,
+				Content:   "Second comment",
+				ParentID:  1,
+				HasParent: true,
 			},
 			expectedID: 2,
 			expectedStoragePost: map[uint][]model.Comment{
@@ -235,7 +240,7 @@ func TestCreateComment(t *testing.T) {
 			},
 			expectedStorageParent: map[uint][]model.Comment{
 				1: {
-					{ID: 2, PostID: 1, Content: "Second comment", ParentID: func(u uint) *uint { return &u }(1)},
+					{ID: 2, PostID: 1, Content: "Second comment", ParentID: 1, HasParent: true},
 				},
 			},
 		},
@@ -249,6 +254,7 @@ func TestCreateComment(t *testing.T) {
 				lastID:            0,
 				mx:                &sync.Mutex{},
 			}
+			fmt.Println(tt.name, tt.commentToCreate, repo)
 			id, err := repo.CreateComment(tt.commentToCreate)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expectedID, id)
