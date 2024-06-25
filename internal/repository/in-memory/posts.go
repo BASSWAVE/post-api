@@ -6,7 +6,7 @@ import (
 )
 
 type PostsRepository struct {
-	storage map[uint]*model.Post
+	storage map[uint]model.PostFromServiceToRepo
 	lastID  uint
 	mx      sync.Mutex
 }
