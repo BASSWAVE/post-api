@@ -1,7 +1,6 @@
 package in_memory
 
 import (
-	"fmt"
 	"post-api/internal/model"
 	"sync"
 	"testing"
@@ -74,7 +73,6 @@ func TestGetCommentsByParentID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 			repo := &CommentsRepository{
 				storageByPostID:   make(map[uint][]model.Comment),
 				storageByParentID: tt.initialStorage,
@@ -228,6 +226,7 @@ func TestCreateComment(t *testing.T) {
 				1: {{ID: 1, PostID: 1, Content: "First comment"}},
 			},
 			initialStorageParent: map[uint][]model.Comment{},
+			lastID:               1,
 			commentToCreate: model.CommentForCreating{
 				PostID:    1,
 				Content:   "Second comment",
@@ -251,10 +250,9 @@ func TestCreateComment(t *testing.T) {
 			repo := &CommentsRepository{
 				storageByPostID:   tt.initialStoragePost,
 				storageByParentID: tt.initialStorageParent,
-				lastID:            0,
+				lastID:            tt.lastID,
 				mx:                &sync.Mutex{},
 			}
-			fmt.Println(tt.name, tt.commentToCreate, repo)
 			id, err := repo.CreateComment(tt.commentToCreate)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expectedID, id)
