@@ -31,7 +31,7 @@ func (r *PostsRepository) CreatePost(post model.PostForCreating) (uint, error) {
 	return postWithID.ID, nil
 }
 
-func (r *PostsRepository) GetAllPosts() ([]model.Post, error) {
+func (r *PostsRepository) GetPosts() ([]model.Post, error) {
 	r.mx.Lock()
 	defer r.mx.Unlock()
 

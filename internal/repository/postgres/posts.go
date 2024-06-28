@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"post-api/internal/model"
 	"post-api/internal/repository"
+	"strconv"
 	"strings"
 )
 
@@ -30,15 +31,35 @@ func (r *PostsRepository) CreatePost(post model.PostForCreating) (uint, error) {
 	return id, nil
 }
 
-func (r *PostsRepository) GetAllPosts() ([]model.Post, error) {
-	rows, err := r.pool.Query(context.Background(), `SELECT * FROM posts`)
+func (r *PostsRepository) GetPosts(limit int, after *string) ([]model.Post, error) {
+	query := `SELECT * FROM posts`
+	args := []interface{}{}
+
+	if after != nil {
+		afterID, err := strconv.ParseUint(*after, 10, 0)
+		if err != nil {
+			return nil, err
+		}
+		query += ` WHERE id > $1`
+		args = append(args, afterID)
+		query += ` ORDER BY id ASC LIMIT $2`
+		args = append(args, limit)
+	} else {
+		query += ` ORDER BY id ASC LIMIT $1`
+		args = append(args, limit)
+	}
+
+	rows, err := r.pool.Query(context.Background(), query, args...)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
+
 	posts, err := pgx.CollectRows(rows, pgx.RowToStructByName[model.Post])
 	if err != nil {
 		return nil, err
 	}
+
 	return posts, nil
 }
 

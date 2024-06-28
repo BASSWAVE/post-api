@@ -2,7 +2,32 @@
 
 package model
 
+type CommentConnection struct {
+	Edges    []CommentEdge `json:"edges"`
+	PageInfo *PageInfo     `json:"pageInfo"`
+}
+
+type CommentEdge struct {
+	Cursor string   `json:"cursor"`
+	Node   *Comment `json:"node"`
+}
+
 type Mutation struct {
+}
+
+type PageInfo struct {
+	EndCursor   string `json:"endCursor"`
+	HasNextPage bool   `json:"hasNextPage"`
+}
+
+type PostConnection struct {
+	Edges    []PostEdge `json:"edges"`
+	PageInfo *PageInfo  `json:"pageInfo"`
+}
+
+type PostEdge struct {
+	Cursor string `json:"cursor"`
+	Node   *Post  `json:"node"`
 }
 
 type Query struct {

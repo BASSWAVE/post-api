@@ -170,7 +170,7 @@ func TestGetAllPosts(t *testing.T) {
 				lastID:  uint(len(tt.initialStorage)),
 				mx:      sync.Mutex{},
 			}
-			result, err := repo.GetAllPosts()
+			result, err := repo.GetPosts()
 			assert.NoError(t, err)
 			assert.ElementsMatch(t, tt.expectedResult, result)
 		})

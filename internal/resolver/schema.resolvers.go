@@ -9,16 +9,44 @@ import (
 	"log"
 	"post-api/internal/graph"
 	"post-api/internal/model"
+	"strconv"
 )
 
+const defaultLimit = 10
+
 // Replies is the resolver for the replies field.
-func (r *commentResolver) Replies(ctx context.Context, obj *model.Comment) ([]model.Comment, error) {
-	log.Println("comment resolver: Replies")
-	replies, err := r.serv.GetReplies(obj.ID)
+func (r *commentResolver) Replies(ctx context.Context, obj *model.Comment, first *int, after *string) (*model.CommentConnection, error) {
+	log.Println("comment resolver: replies")
+
+	limit := defaultLimit
+	if first != nil {
+		limit = *first
+	}
+
+	replies, endCursor, hasNextPage, err := r.serv.GetReplies(obj.ID, limit, after)
 	if err != nil {
 		return nil, err
 	}
-	return replies, nil
+
+	var edges []model.CommentEdge
+	for _, reply := range replies {
+		edges = append(edges, model.CommentEdge{
+			Cursor: strconv.Itoa(int(reply.ID)),
+			Node:   &reply,
+		})
+	}
+
+	pageInfo := &model.PageInfo{
+		EndCursor:   endCursor,
+		HasNextPage: hasNextPage,
+	}
+
+	commentConnection := &model.CommentConnection{
+		Edges:    edges,
+		PageInfo: pageInfo,
+	}
+
+	return commentConnection, nil
 }
 
 // CreatePost is the resolver for the createPost field.
@@ -71,23 +99,72 @@ func (r *mutationResolver) MakeCommentsDisabled(ctx context.Context, postID uint
 }
 
 // Comments is the resolver for the comments field.
-func (r *postResolver) Comments(ctx context.Context, obj *model.Post) ([]model.Comment, error) {
-	log.Println("post resolver: comments")
-	comments, err := r.serv.GetPostComments(obj.ID)
+func (r *postResolver) Comments(ctx context.Context, obj *model.Post, first *int, after *string) (*model.CommentConnection, error) {
+	limit := defaultLimit
+	if first != nil {
+		limit = *first
+	}
+
+	comments, endCursor, hasNextPage, err := r.serv.GetPostComments(obj.ID, limit, after)
 	if err != nil {
 		return nil, err
 	}
-	return comments, nil
+
+	var edges []model.CommentEdge
+	for _, comment := range comments {
+		edges = append(edges, model.CommentEdge{
+			Cursor: strconv.Itoa(int(comment.ID)),
+			Node:   &comment,
+		})
+	}
+
+	pageInfo := &model.PageInfo{
+		EndCursor:   endCursor,
+		HasNextPage: hasNextPage,
+	}
+
+	commentConnection := &model.CommentConnection{
+		Edges:    edges,
+		PageInfo: pageInfo,
+	}
+
+	return commentConnection, nil
 }
 
 // Posts is the resolver for the posts field.
-func (r *queryResolver) Posts(ctx context.Context) ([]model.Post, error) {
+func (r *queryResolver) Posts(ctx context.Context, first *int, after *string) (*model.PostConnection, error) {
 	log.Println("query resolver: posts")
-	posts, err := r.serv.GetAllPosts()
+	limit := defaultLimit
+	if first != nil {
+		limit = *first
+	}
+
+	posts, endCursor, hasNextPage, err := r.serv.GetPosts(limit, after)
 	if err != nil {
 		return nil, err
 	}
-	return posts, nil
+
+	var edges []model.PostEdge
+	for _, post := range posts {
+		edges = append(edges, model.PostEdge{
+			Cursor: strconv.Itoa(int(post.ID)), // Use ID as the cursor
+			Node:   &post,
+		})
+	}
+
+	// Create PageInfo
+	pageInfo := &model.PageInfo{
+		EndCursor:   endCursor,
+		HasNextPage: hasNextPage,
+	}
+
+	// Create PostConnection
+	postConnection := &model.PostConnection{
+		Edges:    edges,
+		PageInfo: pageInfo,
+	}
+
+	return postConnection, nil
 }
 
 // Post is the resolver for the post field.
