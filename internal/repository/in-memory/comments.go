@@ -21,13 +21,14 @@ func NewCommentsRepository() *CommentsRepository {
 	}
 }
 
-func (r *CommentsRepository) GetCommentsByParentID(parentId uint) ([]model.Comment, error) {
+func (r *CommentsRepository) GetCommentsByParentID(parentId uint, limit int, after *string) ([]model.Comment, error) {
 	r.mx.Lock()
 	defer r.mx.Unlock()
+
 	return r.storageByParentID[parentId], nil
 }
 
-func (r *CommentsRepository) GetCommentsByPostID(postID uint) ([]model.Comment, error) {
+func (r *CommentsRepository) GetCommentsByPostID(postID uint, limit int, after *string) ([]model.Comment, error) {
 	r.mx.Lock()
 	defer r.mx.Unlock()
 	return r.storageByPostID[postID], nil

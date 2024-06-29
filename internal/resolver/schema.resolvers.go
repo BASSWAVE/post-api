@@ -18,6 +18,17 @@ const defaultLimit = 10
 func (r *commentResolver) Replies(ctx context.Context, obj *model.Comment, first *int, after *string) (*model.CommentConnection, error) {
 	log.Println("comment resolver: replies")
 
+	if after != nil {
+		if err := cursorValidation(*after); err != nil {
+			return nil, err
+		}
+	}
+	if first != nil {
+		if err := limitValidation(*first); err != nil {
+			return nil, err
+		}
+	}
+
 	limit := defaultLimit
 	if first != nil {
 		limit = *first
@@ -52,6 +63,14 @@ func (r *commentResolver) Replies(ctx context.Context, obj *model.Comment, first
 // CreatePost is the resolver for the createPost field.
 func (r *mutationResolver) CreatePost(ctx context.Context, title string, content string, commentsDisabled bool) (*model.Post, error) {
 	log.Println("mutation resolver: createpost")
+
+	if err := postTitleValidation(title); err != nil {
+		return nil, err
+	}
+	if err := postContentValidation(content); err != nil {
+		return nil, err
+	}
+
 	post := model.PostForCreating{
 		Title:            title,
 		Content:          content,
@@ -68,6 +87,11 @@ func (r *mutationResolver) CreatePost(ctx context.Context, title string, content
 // CreateComment is the resolver for the createComment field.
 func (r *mutationResolver) CreateComment(ctx context.Context, postID uint, content string, parentID *uint) (*model.Comment, error) {
 	log.Println("mutation resolver: create comment")
+
+	if err := commentContentValidation(content); err != nil {
+		return nil, err
+	}
+
 	var parentIDValue uint
 	if parentID == nil {
 		parentIDValue = 0
@@ -100,6 +124,17 @@ func (r *mutationResolver) MakeCommentsDisabled(ctx context.Context, postID uint
 
 // Comments is the resolver for the comments field.
 func (r *postResolver) Comments(ctx context.Context, obj *model.Post, first *int, after *string) (*model.CommentConnection, error) {
+	if after != nil {
+		if err := cursorValidation(*after); err != nil {
+			return nil, err
+		}
+	}
+	if first != nil {
+		if err := limitValidation(*first); err != nil {
+			return nil, err
+		}
+	}
+
 	limit := defaultLimit
 	if first != nil {
 		limit = *first
@@ -134,6 +169,17 @@ func (r *postResolver) Comments(ctx context.Context, obj *model.Post, first *int
 // Posts is the resolver for the posts field.
 func (r *queryResolver) Posts(ctx context.Context, first *int, after *string) (*model.PostConnection, error) {
 	log.Println("query resolver: posts")
+	if after != nil {
+		if err := cursorValidation(*after); err != nil {
+			return nil, err
+		}
+	}
+	if first != nil {
+		if err := limitValidation(*first); err != nil {
+			return nil, err
+		}
+	}
+
 	limit := defaultLimit
 	if first != nil {
 		limit = *first

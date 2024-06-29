@@ -17,7 +17,7 @@ func NewCommentsRepository(pool *pgxpool.Pool) *CommentsRepository {
 }
 
 func (r *CommentsRepository) GetCommentsByParentID(parentId uint, limit int, after *string) ([]model.Comment, error) {
-	query := `SELECT * FROM comments WHERE parent_id = $1`
+	query := `SELECT * FROM comments WHERE parent_id = $1 AND has_parent IS true`
 	args := []interface{}{parentId}
 
 	if after != nil {
